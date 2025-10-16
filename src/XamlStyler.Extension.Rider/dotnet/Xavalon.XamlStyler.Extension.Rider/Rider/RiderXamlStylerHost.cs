@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using JetBrains.Application.Parts;
@@ -48,6 +50,22 @@ namespace Xavalon.XamlStyler.Extension.Rider.Rider
             }
         }
 
+        private XamlLanguageOptions GetXamlLanguageOptions(string filePath)
+        {
+            var options = new XamlLanguageOptions
+            {
+                IsFormatable = true
+            };
+
+            if (!string.IsNullOrEmpty(filePath) && 
+                Path.GetExtension(filePath).Equals(".axaml", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UnescapedAttributeCharacters.Add('>');
+            }
+
+            return options;
+        }
+
         private Task<RdXamlStylerFormattingResult> PerformReformatHandler(
             Lifetime requestLifetime,
             RdXamlStylerFormattingRequest request
@@ -76,11 +94,10 @@ namespace Xavalon.XamlStyler.Extension.Rider.Rider
                         if (stylerOptions.SuppressProcessing || !stylerOptions.FormatOnSave)
                             return new RdXamlStylerFormattingResult(false, false, "");
 
+                        var xamlLanguageOptions = GetXamlLanguageOptions(request.FilePath);
+
                         // Perform styling
-                        var styler = new StylerService(
-                            stylerOptions,
-                            new XamlLanguageOptions { IsFormatable = true }
-                        );
+                        var styler = new StylerService(stylerOptions, xamlLanguageOptions);
 
                         var formattedText = styler
                             .StyleDocument(request.DocumentText)

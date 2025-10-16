@@ -26,8 +26,7 @@ namespace Xavalon.XamlStyler.Extension.Windows.Extensions
         public static bool IsAvaloniaXaml(this Document document)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            return String.Equals(document.Language, Constants.XmlLanguageType, StringComparison.OrdinalIgnoreCase)
-                   && document.FullName.EndsWith(Constants.AxamlFileExtension, StringComparison.OrdinalIgnoreCase);
+            return document.FullName.EndsWith(Constants.AxamlFileExtension,StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsReadOnly(this Document document)

@@ -39,6 +39,22 @@ namespace Xavalon.XamlStyler.Console
             });
         }
 
+        private static XamlLanguageOptions GetXamlLanguageOptions(string filePath)
+        {
+            var xamlLanguageOptions = new XamlLanguageOptions
+            {
+                IsFormatable = true
+            };
+
+            if (Path.GetExtension(filePath).Equals(".axaml", StringComparison.OrdinalIgnoreCase))
+            {
+                xamlLanguageOptions.UnescapedAttributeCharacters.Add('>');
+            }
+
+            return xamlLanguageOptions;
+        }
+
+
         private void ApplyOptionOverrides(CommandLineOptions options, IStylerOptions stylerOptions)
         {
             if (options.IndentSize != null)
@@ -271,12 +287,20 @@ namespace Xavalon.XamlStyler.Console
                 return false;
             }
 
-            string formattedOutput = String.IsNullOrWhiteSpace(configurationPath)
-                ? this.stylerService.StyleDocument(originalContent)
-                : new StylerService(this.LoadConfiguration(configurationPath), new XamlLanguageOptions()
-                {
-                    IsFormatable = true
-                }).StyleDocument(originalContent);
+            var xamlLanguageOptions = XamlStylerConsole.GetXamlLanguageOptions(path);
+            var stylerOptionsToUse = String.IsNullOrWhiteSpace(configurationPath)
+                ? (this.options.Configuration != null
+                    ? this.LoadConfiguration(this.options.Configuration)
+                    : new StylerOptions())
+                : this.LoadConfiguration(configurationPath);
+
+            if (String.IsNullOrWhiteSpace(configurationPath) && this.options.Configuration == null)
+            {
+                this.ApplyOptionOverrides(this.options, stylerOptionsToUse);
+            }
+
+            var fileStylerService = new StylerService(stylerOptionsToUse, xamlLanguageOptions);
+            string formattedOutput = fileStylerService.StyleDocument(originalContent);
 
             if (this.options.IsPassive)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using JetBrains.Application.Progress;
@@ -47,6 +48,22 @@ namespace Xavalon.XamlStyler.Extension.Rider
             _text = text ?? throw new ArgumentNullException(nameof(text));
             _actionAppliesTo = actionAppliesTo;
         }
+
+        private XamlLanguageOptions GetXamlLanguageOptions(string filePath)
+        {
+            var options = new XamlLanguageOptions
+            {
+                IsFormatable = true
+            };
+
+            if (!string.IsNullOrEmpty(filePath) && 
+                Path.GetExtension(filePath).Equals(".axaml", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UnescapedAttributeCharacters.Add('>');
+            }
+
+            return options;
+        }
  
         public override string Text => _text;
         
@@ -93,12 +110,7 @@ namespace Xavalon.XamlStyler.Extension.Rider
             // Bail out early if needed
             if (stylerOptions.SuppressProcessing) return null;
             
-            // Perform styling
-            var styler = new StylerService(stylerOptions, new XamlLanguageOptions
-            {
-                IsFormatable = true
-            });
-            
+            // Get source files to process
             var psiSourceFiles = 
                 _actionAppliesTo == ActionAppliesTo.File ? _dataProvider.Document.GetPsiSourceFiles(solution).AsIReadOnlyList()
                     : _actionAppliesTo == ActionAppliesTo.Project ? _dataProvider.Project.GetAllProjectFiles(it => it.LanguageType.Is<XamlProjectFileType>()).SelectMany(file => file.ToSourceFiles().AsIReadOnlyList())
@@ -111,6 +123,9 @@ namespace Xavalon.XamlStyler.Extension.Rider
                     var sourceFile = file.GetSourceFile();
                     if (sourceFile?.Document != null)
                     {
+                        var filePath = sourceFile.GetLocation()?.FullPath;
+                        var xamlLanguageOptions = GetXamlLanguageOptions(filePath);
+                        var styler = new StylerService(stylerOptions, xamlLanguageOptions);
                         var oldText = sourceFile.Document.GetText();
                         var newText = styler.StyleDocument(oldText).Replace("\r\n", "\n");
                         file.ReParse(new TreeTextRange(new TreeOffset(0), new TreeOffset(oldText.Length)), newText);
