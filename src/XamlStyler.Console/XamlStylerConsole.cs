@@ -54,7 +54,6 @@ namespace Xavalon.XamlStyler.Console
             return xamlLanguageOptions;
         }
 
-
         private void ApplyOptionOverrides(CommandLineOptions options, IStylerOptions stylerOptions)
         {
             if (options.IndentSize != null)
@@ -294,7 +293,7 @@ namespace Xavalon.XamlStyler.Console
                     : new StylerOptions())
                 : this.LoadConfiguration(configurationPath);
 
-            if (String.IsNullOrWhiteSpace(configurationPath) && this.options.Configuration == null)
+            if (String.IsNullOrWhiteSpace(configurationPath))
             {
                 this.ApplyOptionOverrides(this.options, stylerOptionsToUse);
             }
